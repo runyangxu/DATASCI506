@@ -1,1 +1,1 @@
-# STAT506
+# Course work for STAT506
