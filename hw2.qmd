@@ -1,0 +1,512 @@
+---
+title: "HW2"
+author: "Runyang Xu"
+format: html
+editor: visual
+---
+
+# Problem 1
+
+## a
+
+```{r}
+momentum_walk1 <- function(n, p) {
+  if (length(n) != 1 || !is.numeric(n) || is.na(n) ||
+      n < 1 || n != floor(n)) {
+    stop("n must be a positive integer.")
+  }
+  
+  if (length(p) != 1 || !is.numeric(p) || is.na(p) ||
+      p < 0 || p > 1) {
+    stop("p must be between 0 and 1.")
+  }
+  
+  directions <- matrix(
+    c(1, 0,
+     -1, 0,
+      0, 1,
+      0, -1),
+    ncol = 2,
+    byrow = TRUE
+  )
+  
+  previous <- sample(1:4, 1)
+  position <- directions[previous, ]
+  
+  if (n > 1) {
+    for (i in 2:n) {
+      if (runif(1) < p) {
+        current <- previous
+      } else {
+        current <- sample(1:4, 1)
+      }
+      
+      position <- position + directions[current, ]
+      previous <- current
+    }
+  }
+  
+  return(position)
+}
+
+momentum_walk <- momentum_walk1
+
+momentum_walk(10, 0.6)
+```
+
+## b
+
+### Version 1
+
+```{r}
+momentum_walk1(10, 0.6)
+momentum_walk1(1000, 0.6)
+```
+
+momentum_walk1 uses a for loop to update the position one step at a time. The previous direction is stored so that it can be preserved with probability p at the next step.
+
+### Version 2
+
+```{r}
+momentum_walk2 <- function(n, p) {
+  if (length(n) != 1 || !is.numeric(n) || is.na(n) ||
+      n < 1 || n != floor(n)) {
+    stop("n must be a positive integer.")
+  }
+  
+  if (length(p) != 1 || !is.numeric(p) || is.na(p) ||
+      p < 0 || p > 1) {
+    stop("p must be between 0 and 1.")
+  }
+  
+  directions <- matrix(
+    c(1, 0,
+     -1, 0,
+      0, 1,
+      0, -1),
+    ncol = 2,
+    byrow = TRUE
+  )
+  
+  previous <- sample(1:4, 1)
+  position <- directions[previous, ]
+  
+  if (n > 1) {
+    sapply(2:n, function(i) {
+      if (runif(1) < p) {
+        current <- previous
+      } else {
+        current <- sample(1:4, 1)
+      }
+      
+      position <<- position + directions[current, ]
+      previous <<- current
+      
+      return(NULL)
+    })
+  }
+  
+  return(position)
+}
+
+momentum_walk2(10, 0.6)
+momentum_walk2(1000, 0.6)
+```
+
+momentum_walk2 uses sapply instead of an explicit loop. At each step, the function updates the current position and previous direction, while using the same momentum rule as the first implementation.
+
+## c
+
+```{r}
+set.seed(123)
+walk10_1 <- momentum_walk1(10, 0.6)
+
+set.seed(123)
+walk10_2 <- momentum_walk1(10, 0.6)
+
+walk10_1
+walk10_2
+
+set.seed(123)
+walk1000_1 <- momentum_walk1(1000, 0.6)
+
+set.seed(123)
+walk1000_2 <- momentum_walk1(1000, 0.6)
+
+walk1000_1
+walk1000_2
+```
+
+I used set.seed before each simulation. Setting the same seed resets R's random-number generator to the same starting state, so the same sequence of random numbers is generated and the results are reproducible.
+
+## d
+
+```{r}
+set.seed(123)
+
+p_values_d <- c(0, 0.5, 0.9)
+
+positions_d <- sapply(
+  p_values_d,
+  function(p) momentum_walk1(1000, p)
+)
+
+distances_d <- sqrt(
+  positions_d[1, ]^2 + positions_d[2, ]^2
+)
+
+distance_table <- data.frame(
+  p = p_values_d,
+  distance = distances_d
+)
+
+distance_table
+```
+
+Higher momentum increase the final distance because the walk is more likely to continue in the same direction for several steps.
+
+## e
+
+```{r}
+set.seed(123)
+
+p_values <- c(0, 0.25, 0.5, 0.75, 0.9)
+
+mean_distances <- sapply(
+  p_values,
+  function(p) {
+    distances <- replicate(
+      1000,
+      {
+        final_position <- momentum_walk1(1000, p)
+        sqrt(sum(final_position^2))
+      }
+    )
+    
+    mean(distances)
+  }
+)
+
+monte_carlo_results <- data.frame(
+  p = p_values,
+  mean_distance = mean_distances
+)
+
+round(monte_carlo_results, 2)
+```
+
+The mean final distance increases as p increases.
+
+## f
+
+```{r}
+library(microbenchmark)
+
+bench_1000 <- microbenchmark(
+  loop = momentum_walk1(1000, 0.6),
+  apply = momentum_walk2(1000, 0.6),
+  times = 100
+)
+
+bench_1000
+
+bench_100000 <- microbenchmark(
+  loop = momentum_walk1(100000, 0.6),
+  apply = momentum_walk2(100000, 0.6),
+  times = 20
+)
+
+bench_100000
+```
+
+```{r}
+median_1000 <- aggregate(time ~ expr, data = bench_1000, FUN = median)
+median_100000 <- aggregate(time ~ expr, data = bench_100000, FUN = median)
+
+median_1000$median_ms <- median_1000$time / 1e6
+median_100000$median_ms <- median_100000$time / 1e6
+
+median_1000[, c("expr", "median_ms")]
+median_100000[, c("expr", "median_ms")]
+```
+
+The loop version is faster. For (n=1000), its median time is about 181 ms, compared with 239 ms for the apply version. The apply version is slower because it has extra function-call overhead.
+
+# Problem 2
+
+```{r}
+set.seed(123)
+
+n_days <- 10000
+
+morning <- rowSums(
+  matrix(
+    rpois(n_days * 3, lambda = 4),
+    nrow = n_days
+  )
+)
+
+peak_am <- rnorm(
+  n_days,
+  mean = 45,
+  sd = sqrt(16)
+)
+
+midday <- rowSums(
+  matrix(
+    rpois(n_days * 6, lambda = 15),
+    nrow = n_days
+  )
+)
+
+peak_pm <- rnorm(
+  n_days,
+  mean = 55,
+  sd = sqrt(25)
+)
+
+evening <- rowSums(
+  matrix(
+    rpois(n_days * 6, lambda = 9),
+    nrow = n_days
+  )
+)
+
+total_passengers <-
+  morning + peak_am + midday + peak_pm + evening
+
+mean(total_passengers)
+```
+
+# Problem 3
+
+```{r}
+youtube <- read.csv(
+  "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-03-02/youtube.csv"
+)
+```
+
+## a
+
+```{r}
+youtube_clean <- youtube[, c(
+  "year",
+  "funny",
+  "show_product_quickly",
+  "patriotic",
+  "celebrity",
+  "danger",
+  "animals",
+  "use_sex",
+  "view_count",
+  "like_count",
+  "dislike_count",
+  "favorite_count",
+  "comment_count"
+)]
+
+dim(youtube_clean)
+```
+
+The resulting dataset contains 247 observations and 13 variables.
+
+## b
+
+```{r}
+par(mfrow = c(2, 3))
+
+hist(
+  youtube_clean$view_count,
+  main = "View Count",
+  xlab = "View Count"
+)
+
+hist(
+  youtube_clean$like_count,
+  main = "Like Count",
+  xlab = "Like Count"
+)
+
+hist(
+  youtube_clean$dislike_count,
+  main = "Dislike Count",
+  xlab = "Dislike Count"
+)
+
+hist(
+  youtube_clean$favorite_count,
+  main = "Favorite Count",
+  xlab = "Favorite Count"
+)
+
+hist(
+  youtube_clean$comment_count,
+  main = "Comment Count",
+  xlab = "Comment Count"
+)
+
+par(mfrow = c(1, 1))
+```
+
+View count, like count, dislike count, and comment count are all strongly right-skewed, so I applied a log transformation using log1p(). Favorite count has essentially no variation, so it is not appropriate for linear regression.
+
+```{r}
+youtube_clean$log_view_count <-
+  log1p(youtube_clean$view_count)
+
+youtube_clean$log_like_count <-
+  log1p(youtube_clean$like_count)
+
+youtube_clean$log_dislike_count <-
+  log1p(youtube_clean$dislike_count)
+
+youtube_clean$log_comment_count <-
+  log1p(youtube_clean$comment_count)
+
+table(youtube_clean$favorite_count, useNA = "ifany")
+```
+
+Favorite count has no variation among 231 zeros and 16 missing values, so it is not appropriate as an outcome for linear regression.
+
+## c
+
+```{r}
+characteristics <- c(
+  "funny",
+  "show_product_quickly",
+  "patriotic",
+  "celebrity",
+  "danger",
+  "animals",
+  "use_sex"
+)
+
+outcomes <- c(
+  "log_view_count",
+  "log_like_count",
+  "log_dislike_count",
+  "log_comment_count"
+)
+
+results <- data.frame()
+
+for (outcome in outcomes) {
+  for (characteristic in characteristics) {
+    model_formula <- as.formula(
+      paste(outcome, "~", characteristic, "+ year")
+    )
+    
+    fit <- lm(model_formula, data = youtube_clean)
+    coef_table <- summary(fit)$coefficients
+    
+    new_result <- data.frame(
+      outcome = outcome,
+      characteristic = characteristic,
+      estimate = coef_table[2, "Estimate"],
+      p_value = coef_table[2, "Pr(>|t|)"]
+    )
+    
+    results <- rbind(results, new_result)
+  }
+}
+
+results$direction <- ifelse(
+  results$estimate > 0,
+  "positive",
+  "negative"
+)
+
+results
+```
+
+```{r}
+significant_results <- results[
+  results$p_value < 0.05,
+  c("outcome", "characteristic", "estimate", "p_value", "direction")
+]
+
+significant_results
+```
+
+```{r}
+view_results <- results[
+  results$outcome == "log_view_count",
+]
+
+largest_positive_view <- view_results[
+  which.max(view_results$estimate),
+  c("characteristic", "estimate", "p_value")
+]
+
+largest_positive_view
+```
+
+None of the commercial characteristics are statistically significant at the 0.05 level for any of the engagement outcomes. For view count, danger has the largest positive estimated association, with an estimated coefficient of about 0.667, but it is not statistically significant p=0.094.
+
+## d
+
+```{r}
+best_view <- view_results[
+  which.min(view_results$p_value),
+]
+
+best_view
+
+best_characteristic <- best_view$characteristic
+```
+
+```{r}
+complete_rows <- complete.cases(
+  youtube_clean$log_view_count,
+  youtube_clean[[best_characteristic]],
+  youtube_clean$year
+)
+
+y <- youtube_clean$log_view_count[complete_rows]
+
+binary_x <- as.numeric(
+  youtube_clean[[best_characteristic]][complete_rows]
+)
+
+year_x <- youtube_clean$year[complete_rows]
+
+X <- cbind(
+  1,
+  binary_x,
+  year_x
+)
+
+colnames(X) <- c(
+  "Intercept",
+  best_characteristic,
+  "year"
+)
+
+beta_hat <-
+  solve(t(X) %*% X) %*%
+  t(X) %*% y
+
+beta_hat
+```
+
+```{r}
+lm_data <- data.frame(
+  y = y,
+  binary_x = binary_x,
+  year_x = year_x
+)
+
+fit_lm <- lm(
+  y ~ binary_x + year_x,
+  data = lm_data
+)
+
+coef(fit_lm)
+
+all.equal(
+  as.numeric(beta_hat),
+  as.numeric(coef(fit_lm))
+)
+```
+
+danger had the smallest p-value for predicting view count. Using matrix algebra, the estimated coefficients were ((-31.3915, 0.6668, 0.0207)). These match the estimates from lm(), as confirmed by all.equal() returning TRUE.
