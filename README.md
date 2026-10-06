@@ -1,1 +1,1 @@
-# Course work for STAT506
+# Course work for DATASCI506
