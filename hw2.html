@@ -111,6 +111,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
+<section id="github-httpsgithub.comrunyangxudatasci506" class="level1">
+<h1>GitHub: https://github.com/runyangxu/DATASCI506</h1>
+</section>
 <section id="problem-1" class="level1">
 <h1>Problem 1</h1>
 <section id="a" class="level2">
@@ -159,7 +162,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a><span class="fu">momentum_walk</span>(<span class="dv">10</span>, <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1]  1 -5</code></pre>
+<pre><code>[1] -6 -2</code></pre>
 </div>
 </div>
 </section>
@@ -170,11 +173,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">momentum_walk1</span>(<span class="dv">10</span>, <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] -1 -5</code></pre>
+<pre><code>[1]  5 -1</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">momentum_walk1</span>(<span class="dv">1000</span>, <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] -13  21</code></pre>
+<pre><code>[1] -29  23</code></pre>
 </div>
 </div>
 <p>momentum_walk1 uses a for loop to update the position one step at a time. The previous direction is stored so that it can be preserved with probability p at the next step.</p>
@@ -225,11 +228,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb7-41"><a href="#cb7-41" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb7-42"><a href="#cb7-42" aria-hidden="true" tabindex="-1"></a><span class="fu">momentum_walk2</span>(<span class="dv">10</span>, <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 4 0</code></pre>
+<pre><code>[1] -4  2</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">momentum_walk2</span>(<span class="dv">1000</span>, <span class="fl">0.6</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 52 10</code></pre>
+<pre><code>[1] -5 23</code></pre>
 </div>
 </div>
 <p>momentum_walk2 uses sapply instead of an explicit loop. At each step, the function updates the current position and previous direction, while using the same momentum rule as the first implementation.</p>
@@ -354,8 +357,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>Unit: milliseconds
   expr    min      lq     mean  median      uq    max neval
-  loop 1.4683 1.52340 1.631428 1.55675 1.60915 3.1071   100
- apply 1.9392 2.03775 2.192521 2.08615 2.17025 3.5579   100</code></pre>
+  loop 1.4449 1.51635 1.607801 1.53950 1.60520 2.4816   100
+ apply 1.9463 2.02215 2.136904 2.06385 2.12835 2.8539   100</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>bench_100000 <span class="ot">&lt;-</span> <span class="fu">microbenchmark</span>(</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">loop =</span> <span class="fu">momentum_walk1</span>(<span class="dv">100000</span>, <span class="fl">0.6</span>),</span>
@@ -367,8 +370,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="cell-output cell-output-stdout">
 <pre><code>Unit: milliseconds
   expr      min       lq     mean   median       uq      max neval
-  loop 159.1040 160.5258 161.8580 161.9795 162.6827 164.9978    20
- apply 207.6218 213.0080 216.1697 215.6112 218.4536 231.0646    20</code></pre>
+  loop 154.8383 157.4789 159.6397 159.7127 161.5747 166.0203    20
+ apply 207.7855 211.6313 214.0403 213.0165 214.3538 228.9510    20</code></pre>
 </div>
 </div>
 <div class="cell">
@@ -381,14 +384,14 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>median_1000[, <span class="fu">c</span>(<span class="st">"expr"</span>, <span class="st">"median_ms"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   expr median_ms
-1  loop   1.55675
-2 apply   2.08615</code></pre>
+1  loop   1.53950
+2 apply   2.06385</code></pre>
 </div>
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>median_100000[, <span class="fu">c</span>(<span class="st">"expr"</span>, <span class="st">"median_ms"</span>)]</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   expr median_ms
-1  loop  161.9795
-2 apply  215.6112</code></pre>
+1  loop  159.7127
+2 apply  213.0165</code></pre>
 </div>
 </div>
 <p>The loop version is faster. For (n=1000), its median time is about 181 ms, compared with 239 ms for the apply version. The apply version is slower because it has extra function-call overhead.</p>
