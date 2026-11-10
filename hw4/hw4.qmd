@@ -1,0 +1,228 @@
+---
+title: "hw4"
+author: "Runyang Xu"
+format: html
+editor: visual
+---
+# GitHub: https://github.com/runyangxu/DATASCI506
+
+# Problem 1 - New Zealand
+
+```{r}
+library(tidyverse)
+library(knitr)
+nzge <- readRDS(url("https://phuongov.github.io/stats506-f26/data_f26/nzge.rds")
+)
+```
+
+## 1
+
+```{r}
+nzge %>%
+  group_by(election_year, voting_type) %>%
+  summarise(total_votes = sum(votes, na.rm = TRUE), .groups = "drop") %>%
+  arrange(desc(total_votes)) %>%
+  kable()
+```
+
+## 2
+
+```{r}
+nzge %>%
+  filter(election_year == 2014, voting_type == "Candidate") %>%
+  group_by(party) %>%
+  summarise(votes = sum(votes, na.rm = TRUE), .groups = "drop") %>%
+  mutate(percent = round(100 * votes / sum(votes), 2)) %>%
+  arrange(desc(percent)) %>%
+  kable()
+```
+
+## 3
+
+```{r}
+nzge %>%
+  group_by(election_year, voting_type, party) %>%
+  summarise(total_votes = sum(votes, na.rm = TRUE), .groups = "drop") %>%
+  group_by(election_year, voting_type) %>%
+  slice_max(total_votes, n = 1, with_ties = TRUE) %>%
+  ungroup() %>%
+  select(election_year, voting_type, party, total_votes) %>%
+  arrange(election_year, voting_type) %>%
+  kable()
+```
+
+# Problem 2 - Tennis
+
+```{r}
+tennis <- read_csv(
+  "https://raw.githubusercontent.com/azhou5849/tennis-atp-sackmann-data/master/atp_matches_2019.csv",
+  show_col_types = FALSE
+)
+```
+
+## 1
+
+```{r}
+tennis %>%
+  summarise(tournaments = n_distinct(tourney_id)) %>%
+  kable()
+```
+
+## 2
+
+```{r}
+champions <- tennis %>%
+  filter(round == "F") %>%
+  count(winner_id, winner_name, name = "titles", sort = TRUE)
+
+champions %>%
+  summarise(
+    players_with_multiple_titles = sum(titles > 1),
+    most_titles = max(titles)
+  ) %>%
+  kable()
+
+champions %>%
+  filter(titles == max(titles)) %>%
+  kable()
+```
+
+Yes, Novak Djokovic and Dominic Thiem tied for the most titles in 2019, with 5 titles each.
+
+## 3
+
+```{r}
+aces <- tennis %>%
+  filter(!is.na(w_ace), !is.na(l_ace)) %>%
+  mutate(difference = w_ace - l_ace)
+
+aces %>%
+  summarise(
+    mean_winner_aces = mean(w_ace),
+    mean_loser_aces = mean(l_ace),
+    mean_difference = mean(difference),
+    percent_more_aces = 100 * mean(difference > 0)
+  ) %>%
+  kable(digits = 2)
+```
+
+```{r}
+aces %>%
+  ggplot(aes(x = difference)) +
+  geom_histogram(binwidth = 2, fill = "steelblue", color = "white") +
+  labs(title = "Difference in Aces (Winner - Loser)",
+       x = "Ace difference", y = "Matches") +
+  theme_minimal()
+```
+
+The distribution is roughly bell-shaped and centered near 0, with most matches having an ace difference between -10 and 10. This suggests that winners do not always have more aces than losers.
+
+## 4
+
+```{r}
+wins <- tennis %>%
+  count(winner_id, winner_name, name = "wins") %>%
+  rename(player_id = winner_id, player = winner_name)
+
+losses <- tennis %>%
+  count(loser_id, name = "losses") %>%
+  rename(player_id = loser_id)
+
+win_rates <- wins %>%
+  full_join(losses, by = "player_id") %>%
+  mutate(wins = replace_na(wins, 0L),
+         losses = replace_na(losses, 0L),
+         matches = wins + losses,
+         win_rate = wins / matches) %>%
+  filter(matches >= 5) %>%
+  arrange(desc(win_rate))
+
+win_rates %>%
+  filter(win_rate == max(win_rate)) %>%
+  select(player, wins, losses, matches, win_rate) %>%
+  kable(digits = 3)
+```
+
+# Problem 3 - Visualization
+
+```{r}
+covid <- read_csv(
+  "https://raw.githubusercontent.com/nytimes/covid-19-data/refs/heads/master/rolling-averages/us-states.csv",
+  show_col_types = FALSE
+) %>%
+  filter(state %in% state.name) %>%
+  mutate(date = as.Date(date))
+```
+
+## 1
+
+```{r}
+us_cases <- covid %>%
+  group_by(date) %>%
+  summarise(cases_avg = sum(cases_avg, na.rm = TRUE), .groups = "drop")
+
+ggplot(us_cases, aes(date, cases_avg)) +
+  geom_line(color = "steelblue", linewidth = 0.5) +
+  geom_smooth(se = FALSE, color = "firebrick", span = 0.04) +
+  labs(title = "COVID-19 Waves in the United States",
+       x = "Date", y = "Daily new cases (7-day average)") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+There are several major COVID-19 waves in the US. The largest peak occurred in early 2022, with nearly 800,000 daily new cases. The red smooth curve shows the overall trend more clearly.
+
+## 2
+
+```{r}
+state_rates <- covid %>%
+  group_by(state) %>%
+  summarise(total_rate = sum(cases_avg_per_100k, na.rm = TRUE),
+            .groups = "drop") %>%
+  arrange(desc(total_rate))
+
+highest <- state_rates %>% slice_head(n = 1)
+lowest <- state_rates %>% slice_tail(n = 1)
+bind_rows(highest, lowest) %>% kable(digits = 1)
+
+selected_states <- c(highest$state, lowest$state)
+
+covid %>%
+  filter(state %in% selected_states) %>%
+  ggplot(aes(date, cases_avg_per_100k, color = state)) +
+  geom_line(linewidth = 0.5) +
+  facet_wrap(~state, ncol = 1) +
+  labs(title = "Highest and Lowest Cumulative COVID-19 Case Rates",
+       x = "Date", y = "Daily cases per 100,000 (7-day average)") +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+
+Rhode Island had much higher daily cases per 100,000 people than Maine, especially in early 2022. Rhode Island peaked at around 500, while Maine stayed below 100.
+
+## 3
+
+```{r}
+first_five <- covid %>%
+  filter(cases_avg_per_100k >= 10) %>%
+  group_by(state) %>%
+  summarise(first_date = min(date), .groups = "drop") %>%
+  arrange(first_date) %>%
+  slice_head(n = 5)
+
+first_five %>% kable()
+
+covid %>%
+  filter(state %in% first_five$state,
+         date <= as.Date("2020-06-30")) %>%
+  ggplot(aes(date, cases_avg_per_100k, color = state)) +
+  geom_line(linewidth = 0.8) +
+  geom_hline(yintercept = 10, linetype = "dashed") +
+  labs(title = "First Five States with Substantial COVID-19 Spread",
+       subtitle = "Threshold: 10 daily cases per 100,000 (7-day average)",
+       x = "Date", y = "Daily cases per 100,000 (7-day average)",
+       color = "State") +
+  theme_minimal()
+```
+
+New York was the first state to reach the threshold of 10 daily cases per 100,000 people, followed by New Jersey, Massachusetts, Connecticut, and Louisiana. New York also had the highest peak, at around 50 cases per 100,000 people.
